@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IT Majdur — On Duty</title>
+<meta name="description" content="IT Majdur — punch in, plug in, grind on. Gym mode aur South BGM mode, dono available.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&family=Noto+Sans+Devanagari:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #0B0E14;
+    --bg-raised: #11151F;
+    --line: #232A38;
+    --amber: #E8A33D;
+    --caution: #F2C94C;
+    --terminal-green: #7FDBAA;
+    --text: #EDE6D6;
+    --text-dim: #8892A4;
+    --danger: #E8654A;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  html{scroll-behavior:smooth;}
+  body{
+    background:
+      radial-gradient(circle at 15% 0%, rgba(232,163,61,0.08), transparent 45%),
+      radial-gradient(circle at 85% 20%, rgba(127,219,170,0.06), transparent 40%),
+      var(--bg);
+    color: var(--text);
+    font-family: 'Space Grotesk', sans-serif;
+    min-height:100vh;
+    line-height:1.5;
+  }
+  .mono{font-family:'JetBrains Mono', monospace;}
+  .dev{font-family:'Noto Sans Devanagari', sans-serif;}
+
+  /* ---- Punch-tape background lines ---- */
+  .tape-rule{
+    position:fixed; top:0; left:0; width:100%; height:100%;
+    background-image: repeating-linear-gradient(180deg, transparent, transparent 39px, rgba(255,255,255,0.02) 40px);
+    pointer-events:none; z-index:0;
+  }
+
+  /* ---- Header / punch card ---- */
+  header{
+    position:relative; z-index:1;
+    max-width:960px; margin:0 auto; padding:28px 24px 0;
+    display:flex; justify-content:space-between; align-items:center;
+    flex-wrap:wrap; gap:12px;
+  }
+  .brand{display:flex; align-items:center; gap:10px;}
+  .brand-badge{
+    width:34px; height:34px; border-radius:6px;
+    background: var(--amber); color:#0B0E14;
+    display:flex; align-items:center; justify-content:center;
+    font-weight:700; font-family:'JetBrains Mono', monospace; font-size:14px;
+  }
+  .brand-name{font-weight:700; letter-spacing:0.02em; font-size:16px;}
+  .clock-live{
+    font-family:'JetBrains Mono', monospace; font-size:13px; color: var(--terminal-green);
+    display:flex; align-items:center; gap:8px;
+  }
+  .clock-live .dot{
+    width:7px; height:7px; border-radius:50%; background:var(--terminal-green);
+    box-shadow:0 0 8px var(--terminal-green);
+    animation: blink 1.6s infinite;
+  }
+  @keyframes blink{ 0%,100%{opacity:1;} 50%{opacity:0.25;} }
+
+  /* ---- Hero ---- */
+  .hero{
+    position:relative; z-index:1;
+    max-width:960px; margin:0 auto; padding:60px 24px 20px;
+  }
+  .eyebrow{
+    display:inline-flex; align-items:center; gap:8px;
+    font-family:'JetBrains Mono', monospace; font-size:12px; letter-spacing:0.08em;
+    text-transform:uppercase; color:var(--amber);
+    border:1px solid rgba(232,163,61,0.35); border-radius:999px;
+    padding:5px 12px; margin-bottom:22px;
+  }
+  h1{
+    font-size:clamp(2.2rem, 6vw, 3.6rem);
+    line-height:1.08; font-weight:700; letter-spacing:-0.01em;
+    max-width:14ch;
+  }
+  h1 .accent{color:var(--amber);}
+  .tagline{
+    margin-top:18px; font-size:18px; color:var(--text-dim); max-width:52ch;
+  }
+  .tagline strong{color:var(--text); font-weight:600;}
+
+  /* Punch card ID */
+  .id-card{
+    margin-top:36px;
+    background: var(--bg-raised);
+    border:1px solid var(--line);
+    border-radius:14px;
+    padding:20px 22px;
+    display:grid; grid-template-columns: auto 1fr auto; gap:18px; align-items:center;
+    max-width:600px;
+    position:relative; overflow:hidden;
+  }
+  .id-card::before{
+    content:""; position:absolute; left:0; top:0; bottom:0; width:6px;
+    background: repeating-linear-gradient(180deg, var(--caution) 0 10px, #0B0E14 10px 20px);
+  }
+  .id-photo{
+    width:52px; height:52px; border-radius:8px;
+    background: linear-gradient(135deg, var(--amber), var(--danger));
+    display:flex; align-items:center; justify-content:center;
+    font-size:24px;
+  }
+  .id-info .id-name{font-weight:700; font-size:15px;}
+  .id-info .id-role{font-family:'JetBrains Mono', monospace; font-size:12px; color:var(--text-dim); margin-top:3px;}
+  .id-status{
+    font-family:'JetBrains Mono', monospace; font-size:11px; text-transform:uppercase;
+    background: rgba(127,219,170,0.12); color:var(--terminal-green);
+    border:1px solid rgba(127,219,170,0.3); border-radius:999px;
+    padding:5px 10px; white-space:nowrap;
+  }
+
+  /* ---- Categories strip ---- */
+  .strip{
+    position:relative; z-index:1;
+    max-width:960px; margin:44px auto 0; padding:0 24px;
+    display:flex; flex-wrap:wrap; gap:10px;
+  }
+  .chip{
+    font-family:'JetBrains Mono', monospace; font-size:12.5px;
+    border:1px solid var(--line); color:var(--text-dim);
+    border-radius:999px; padding:7px 13px;
+  }
+
+  /* ---- Player section ---- */
+  .player-section{
+    position:relative; z-index:1;
+    max-width:960px; margin:64px auto 0; padding:0 24px;
+  }
+  .section-head{display:flex; align-items:baseline; justify-content:space-between; flex-wrap:wrap; gap:10px; margin-bottom:18px;}
+  .section-head h2{font-size:22px; font-weight:700;}
+  .section-head .sub{font-family:'JetBrains Mono', monospace; font-size:12px; color:var(--text-dim);}
+
+  .mode-tabs{display:flex; gap:8px; margin-bottom:20px; flex-wrap:wrap;}
+  .mode-btn{
+    font-family:'JetBrains Mono', monospace; font-size:13px;
+    background: var(--bg-raised); color:var(--text-dim);
+    border:1px solid var(--line); border-radius:10px;
+    padding:10px 16px; cursor:pointer; transition:all .15s ease;
+    display:flex; align-items:center; gap:8px;
+  }
+  .mode-btn:hover{ color:var(--text); border-color:var(--amber); }
+  .mode-btn.active{
+    background: rgba(232,163,61,0.12); color:var(--amber); border-color:var(--amber);
+  }
+
+  .player-card{
+    background: var(--bg-raised);
+    border:1px solid var(--line);
+    border-radius:16px;
+    padding:18px;
+  }
+  .player-frame-wrap{
+    position:relative; width:100%; padding-top:56.25%;
+    border-radius:10px; overflow:hidden; background:#000;
+  }
+  .player-frame-wrap iframe{
+    position:absolute; top:0; left:0; width:100%; height:100%; border:0;
+  }
+  .player-controls{
+    display:flex; align-items:center; gap:10px;
+    margin-top:14px; flex-wrap:wrap;
+  }
+  .ctrl-btn{
+    font-family:'JetBrains Mono', monospace; font-size:15px;
+    background: var(--bg); color:var(--text);
+    border:1px solid var(--line); border-radius:8px;
+    width:38px; height:38px; cursor:pointer;
+    display:flex; align-items:center; justify-content:center;
+    transition:all .15s ease;
+  }
+  .ctrl-btn:hover{ border-color:var(--amber); color:var(--amber); }
+  .ctrl-btn.primary{
+    background: var(--amber); color:#0B0E14; border-color:var(--amber);
+    width:44px; height:44px; font-size:17px;
+  }
+  .ctrl-btn.primary:hover{ opacity:0.9; color:#0B0E14; }
+  .player-status{ color:var(--text-dim); font-size:12px; margin-left:4px; }
+
+  .player-meta{
+    display:flex; justify-content:space-between; align-items:center;
+    margin-top:14px; flex-wrap:wrap; gap:10px;
+  }
+  .now-playing{font-family:'JetBrains Mono', monospace; font-size:12.5px; color:var(--text-dim);}
+  .now-playing span{color:var(--terminal-green);}
+  .open-yt{
+    font-family:'JetBrains Mono', monospace; font-size:12.5px; color:var(--amber);
+    text-decoration:none; border:1px solid rgba(232,163,61,0.35); border-radius:8px;
+    padding:7px 12px; transition:background .15s ease;
+  }
+  .open-yt:hover{background: rgba(232,163,61,0.1);}
+
+  /* ---- Majdur wisdom ---- */
+  .wisdom{
+    position:relative; z-index:1;
+    max-width:960px; margin:64px auto 0; padding:0 24px;
+    display:grid; grid-template-columns: repeat(auto-fit, minmax(240px,1fr)); gap:14px;
+  }
+  .wisdom-card{
+    background: var(--bg-raised); border:1px solid var(--line); border-radius:14px;
+    padding:20px;
+  }
+  .wisdom-card .term{font-family:'JetBrains Mono', monospace; color:var(--caution); font-size:13px; margin-bottom:8px;}
+  .wisdom-card .mean{font-size:14.5px; color:var(--text-dim);}
+
+  footer{
+    position:relative; z-index:1;
+    max-width:960px; margin:70px auto 0; padding:24px 24px 50px;
+    border-top:1px solid var(--line);
+    display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;
+  }
+  footer p{font-family:'JetBrains Mono', monospace; font-size:12px; color:var(--text-dim);}
+
+  @media (max-width:560px){
+    .id-card{grid-template-columns: auto 1fr; }
+    .id-status{grid-column: 1 / -1;}
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    .clock-live .dot{animation:none;}
+  }
+</style>
+</head>
+<body>
+<div class="tape-rule"></div>
+
+<header>
+  <div class="brand">
+    <div class="brand-badge mono">IT</div>
+    <div class="brand-name">IT Majdur<span class="dev"> — मजदूर</span></div>
+  </div>
+  <div class="clock-live mono">
+    <span class="dot"></span>
+    <span id="liveClock">--:--:--</span>
+    <span>· ON DUTY</span>
+  </div>
+</header>
+
+<section class="hero">
+  <span class="eyebrow mono">deploy status: production 🟢</span>
+  <h1>Code likhta hoon,<br><span class="accent">deadline jeeta hoon.</span></h1>
+  <p class="tagline">Har din ek naya <strong>ticket</strong>, ek naya <strong>standup</strong>, aur ek <strong>"it's working on my machine"</strong> moment. Yeh site un sab <strong>IT majdooron</strong> ke liye hai jo grind karte hain — gym mein bhi, sprint mein bhi.</p>
+
+  <div class="id-card">
+    <div class="id-photo">👷‍♂️</div>
+    <div class="id-info">
+      <div class="id-name">Employee: IT Majdur</div>
+      <div class="id-role mono">Designation: Full-Time Bug Fighter</div>
+    </div>
+    <div class="id-status">Punched In</div>
+  </div>
+</section>
+
+<div class="strip">
+  <span class="chip">✓ 9 to 9 (technically 9 to 6)</span>
+  <span class="chip">✓ Standup Survivor</span>
+  <span class="chip">✓ Git Blame Champion</span>
+  <span class="chip">✓ Coffee-Powered</span>
+  <span class="chip">✓ Sprint Runner</span>
+  <span class="chip">✓ Chai Break Enjoyer</span>
+</div>
+
+<section class="player-section" id="player">
+  <div class="section-head">
+    <h2>🎧 Majdur Music Mode</h2>
+    <span class="sub mono">powered by youtube iframe api — free</span>
+  </div>
+
+  <div class="mode-tabs">
+    <button class="mode-btn active" data-mode="gym">🏋️ Gym Majdur Mode</button>
+    <button class="mode-btn" data-mode="south">🔥 South Masala BGM Mode</button>
+  </div>
+
+  <div class="player-card">
+    <div class="player-frame-wrap">
+      <div id="ytPlayer"></div>
+    </div>
+    <div class="player-controls">
+      <button class="ctrl-btn" id="prevBtn" title="Previous">⏮</button>
+      <button class="ctrl-btn primary" id="playPauseBtn" title="Play/Pause">▶</button>
+      <button class="ctrl-btn" id="nextBtn" title="Next">⏭</button>
+      <span class="player-status mono" id="playerStatus">loading…</span>
+    </div>
+    <div class="player-meta">
+      <div class="now-playing mono">mode: <span id="modeLabel">gym_workout.playlist</span></div>
+      <a class="open-yt mono" id="openYt" href="https://www.youtube.com/playlist?list=PLwHPDVxB8ZaJZg-dUrRLOfnCgsp2AhU3s" target="_blank" rel="noopener">Open in YouTube ↗</a>
+    </div>
+  </div>
+</section>
+
+<section class="wisdom">
+  <div class="wisdom-card">
+    <div class="term mono">standup</div>
+    <div class="mean">Roz subah 15 minute ka meeting jo 45 minute chalta hai, "yesterday I was blocked" ke saath.</div>
+  </div>
+  <div class="wisdom-card">
+    <div class="term mono">deployment_friday</div>
+    <div class="mean">Sabse dangerous din. Production break hone ka 90% chance.</div>
+  </div>
+  <div class="wisdom-card">
+    <div class="term mono">"it's a small change"</div>
+    <div class="mean">Famous last words before 6 ghante ka debugging session.</div>
+  </div>
+  <div class="wisdom-card">
+    <div class="term mono">wfh_mode</div>
+    <div class="mean">Camera off, mic muted, deployment on — asli majdur ka safety gear.</div>
+  </div>
+</section>
+
+<footer>
+  <p>© 2026 IT Majdur — built for the grind. Change playlists in index.html.</p>
+  <p>hosted free on Vercel</p>
+</footer>
+
+<script>
+  // Live clock
+  function tick(){
+    const now = new Date();
+    document.getElementById('liveClock').textContent =
+      now.toLocaleTimeString('en-IN', { hour:'2-digit', minute:'2-digit', second:'2-digit' });
+  }
+  tick();
+  setInterval(tick, 1000);
+
+  // ---- Playlist config: replace these playlist IDs with your own ----
+  const PLAYLISTS = {
+    gym: {
+      id: "PLwHPDVxB8ZaJZg-dUrRLOfnCgsp2AhU3s",
+      label: "gym_workout.playlist"
+    },
+    south: {
+      id: "PLDH1Pd007Es3MVdG3JQRTYQ7TmGCt0Hy7",
+      label: "south_masala_bgm.playlist"
+    }
+  };
+
+  const openYt = document.getElementById('openYt');
+  const modeLabel = document.getElementById('modeLabel');
+  const buttons = document.querySelectorAll('.mode-btn');
+  const playPauseBtn = document.getElementById('playPauseBtn');
+  const prevBtn = document.getElementById('prevBtn');
+  const nextBtn = document.getElementById('nextBtn');
+  const playerStatus = document.getElementById('playerStatus');
+
+  let player;
+  let currentMode = 'gym';
+  let apiReady = false;
+
+  // Load the official YouTube IFrame Player API script
+  const tag = document.createElement('script');
+  tag.src = "https://www.youtube.com/iframe_api";
+  document.head.appendChild(tag);
+
+  // Called automatically by the YouTube API once it has loaded
+  window.onYouTubeIframeAPIReady = function () {
+    apiReady = true;
+    player = new YT.Player('ytPlayer', {
+      host: 'https://www.youtube-nocookie.com',
+      playerVars: {
+        listType: 'playlist',
+        list: PLAYLISTS[currentMode].id,
+        autoplay: 0,
+        rel: 0
+      },
+      events: {
+        onReady: onPlayerReady,
+        onStateChange: onPlayerStateChange,
+        onError: onPlayerError
+      }
+    });
+  };
+
+  function onPlayerReady() {
+    playerStatus.textContent = 'ready — tap play';
+  }
+
+  function onPlayerStateChange(e) {
+    if (e.data === YT.PlayerState.PLAYING) {
+      playPauseBtn.textContent = '⏸';
+      playerStatus.textContent = 'playing';
+    } else if (e.data === YT.PlayerState.PAUSED) {
+      playPauseBtn.textContent = '▶';
+      playerStatus.textContent = 'paused';
+    } else if (e.data === YT.PlayerState.BUFFERING) {
+      playerStatus.textContent = 'buffering…';
+    } else if (e.data === YT.PlayerState.ENDED) {
+      playerStatus.textContent = 'track ended';
+    } else if (e.data === YT.PlayerState.CUED) {
+      playerStatus.textContent = 'ready — tap play';
+    }
+  }
+
+  function onPlayerError(e) {
+    // 2 invalid param, 5 html5 error, 100 not found, 101/150 embedding disabled
+    const messages = {
+      2: 'invalid playlist id',
+      5: 'playback error',
+      100: 'playlist not found',
+      101: 'owner disabled embedding for this playlist',
+      150: 'owner disabled embedding for this playlist'
+    };
+    playerStatus.textContent = messages[e.data] || 'playback error — open on YouTube instead';
+  }
+
+  // Mode switch buttons
+  buttons.forEach(btn => {
+    btn.addEventListener('click', () => {
+      buttons.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      const mode = btn.dataset.mode;
+      currentMode = mode;
+      const pl = PLAYLISTS[mode];
+
+      openYt.href = `https://www.youtube.com/playlist?list=${pl.id}`;
+      modeLabel.textContent = pl.label;
+
+      if (apiReady && player && player.loadPlaylist) {
+        // loadPlaylist auto-starts playback — this counts as a real user click,
+        // so autoplay-with-sound is allowed by the browser here
+        player.loadPlaylist({ list: pl.id, listType: 'playlist' });
+        playerStatus.textContent = 'loading playlist…';
+      }
+    });
+  });
+
+  // Play / Pause
+  playPauseBtn.addEventListener('click', () => {
+    if (!player || !apiReady) return;
+    const state = player.getPlayerState();
+    if (state === YT.PlayerState.PLAYING) {
+      player.pauseVideo();
+    } else {
+      player.playVideo();
+    }
+  });
+
+  prevBtn.addEventListener('click', () => {
+    if (player && player.previousVideo) player.previousVideo();
+  });
+  nextBtn.addEventListener('click', () => {
+    if (player && player.nextVideo) player.nextVideo();
+  });
+</script>
+</body>
+</html>
