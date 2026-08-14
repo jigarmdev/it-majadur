@@ -161,12 +161,26 @@
     border-radius:16px;
     padding:18px;
   }
-  .player-frame-wrap{
-    position:relative; width:100%; padding-top:56.25%;
-    border-radius:10px; overflow:hidden; background:#000;
+  .audio-face{
+    display:flex; align-items:center; gap:16px;
+    padding:22px;
+    background: radial-gradient(circle at 30% 20%, rgba(232,163,61,0.10), transparent 60%), var(--bg);
+    border:1px solid var(--line); border-radius:12px;
   }
-  .player-frame-wrap iframe{
-    position:absolute; top:0; left:0; width:100%; height:100%; border:0;
+  .audio-face-icon{
+    width:52px; height:52px; border-radius:12px;
+    background: var(--amber); color:#0B0E14;
+    display:flex; align-items:center; justify-content:center;
+    font-size:22px; flex-shrink:0;
+  }
+  .audio-face-icon.spin{ animation: spin 3.5s linear infinite; }
+  @keyframes spin{ from{transform:rotate(0deg);} to{transform:rotate(360deg);} }
+  .audio-face-title{ font-weight:700; font-size:16px; }
+  .audio-face-sub{ margin-top:4px; font-size:12.5px; color:var(--text-dim); }
+
+  .player-frame-wrap{
+    position:absolute; width:1px; height:1px;
+    overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap;
   }
   .player-controls{
     display:flex; align-items:center; gap:10px;
@@ -186,7 +200,6 @@
     width:44px; height:44px; font-size:17px;
   }
   .ctrl-btn.primary:hover{ opacity:0.9; color:#0B0E14; }
-  .player-status{ color:var(--text-dim); font-size:12px; margin-left:4px; }
 
   .player-meta{
     display:flex; justify-content:space-between; align-items:center;
@@ -283,6 +296,13 @@
   </div>
 
   <div class="player-card">
+    <div class="audio-face">
+      <div class="audio-face-icon" id="audioIcon">🎵</div>
+      <div class="audio-face-text">
+        <div class="audio-face-title" id="audioTitle">Audio Mode</div>
+        <div class="audio-face-sub mono" id="playerStatus">loading…</div>
+      </div>
+    </div>
     <div class="player-frame-wrap">
       <div id="ytPlayer"></div>
     </div>
@@ -290,11 +310,11 @@
       <button class="ctrl-btn" id="prevBtn" title="Previous">⏮</button>
       <button class="ctrl-btn primary" id="playPauseBtn" title="Play/Pause">▶</button>
       <button class="ctrl-btn" id="nextBtn" title="Next">⏭</button>
-      <span class="player-status mono" id="playerStatus">loading…</span>
+      <button class="ctrl-btn" id="shuffleBtn" title="Play a new random song">🔀</button>
     </div>
     <div class="player-meta">
-      <div class="now-playing mono">mode: <span id="modeLabel">gym_workout.playlist</span></div>
-      <a class="open-yt mono" id="openYt" href="https://www.youtube.com/playlist?list=PLwHPDVxB8ZaJZg-dUrRLOfnCgsp2AhU3s" target="_blank" rel="noopener">Open in YouTube ↗</a>
+      <div class="now-playing mono">mode: <span id="modeLabel">gym_sidhu_moosewala.playlist</span></div>
+      <a class="open-yt mono" id="openYt" href="https://www.youtube.com/playlist?list=PLMMzuduZqhOerR1LTpvdrSdAmcT6umwEr" target="_blank" rel="noopener">Open in YouTube ↗</a>
     </div>
   </div>
 </section>
@@ -319,8 +339,8 @@
 </section>
 
 <footer>
-  <p>© 2026 IT Majdur — Built for the grind.</p>
-  <p>hosted free on Vercel - Due to less salary</p>
+  <p>© 2026 IT Majdur — built for the grind. Change playlists on click you mouse.</p>
+  <p>hosted free on Vercel — due to less salary</p>
 </footer>
 
 <script>
@@ -333,15 +353,19 @@
   tick();
   setInterval(tick, 1000);
 
-  // ---- Playlist config: replace these playlist IDs with your own ----
+  // ---- Playlist config: replace these to change songs ----
   const PLAYLISTS = {
     gym: {
-      id: "PLwHPDVxB8ZaJZg-dUrRLOfnCgsp2AhU3s",
-      label: "gym_workout.playlist"
+      type: 'playlist',
+      id: 'PLMMzuduZqhOerR1LTpvdrSdAmcT6umwEr',
+      label: 'gym_sidhu_moosewala.playlist',
+      openUrl: 'https://www.youtube.com/playlist?list=PLMMzuduZqhOerR1LTpvdrSdAmcT6umwEr'
     },
     south: {
-      id: "PLDH1Pd007Es3MVdG3JQRTYQ7TmGCt0Hy7",
-      label: "south_masala_bgm.playlist"
+      type: 'videos',
+      ids: ['0Yx04AIM6Hs', 'nq4KnwIaDV8', 'Xffhn3CZ8lI'],
+      label: 'south_bgm.custom_mix',
+      openUrl: 'https://www.youtube.com/watch?v=0Yx04AIM6Hs'
     }
   };
 
@@ -351,11 +375,15 @@
   const playPauseBtn = document.getElementById('playPauseBtn');
   const prevBtn = document.getElementById('prevBtn');
   const nextBtn = document.getElementById('nextBtn');
+  const shuffleBtn = document.getElementById('shuffleBtn');
   const playerStatus = document.getElementById('playerStatus');
+  const audioIcon = document.getElementById('audioIcon');
+  const audioTitle = document.getElementById('audioTitle');
 
   let player;
   let currentMode = 'gym';
   let apiReady = false;
+  let hasRandomizedThisLoad = false;
 
   // Load the official YouTube IFrame Player API script
   const tag = document.createElement('script');
@@ -365,14 +393,14 @@
   // Called automatically by the YouTube API once it has loaded
   window.onYouTubeIframeAPIReady = function () {
     apiReady = true;
+    const initial = PLAYLISTS[currentMode];
+    const playerVars = initial.type === 'playlist'
+      ? { listType: 'playlist', list: initial.id, autoplay: 0, rel: 0 }
+      : { videoId: initial.ids[0], playlist: initial.ids.slice(1).join(','), autoplay: 0, rel: 0 };
+
     player = new YT.Player('ytPlayer', {
       host: 'https://www.youtube-nocookie.com',
-      playerVars: {
-        listType: 'playlist',
-        list: PLAYLISTS[currentMode].id,
-        autoplay: 0,
-        rel: 0
-      },
+      playerVars: playerVars,
       events: {
         onReady: onPlayerReady,
         onStateChange: onPlayerStateChange,
@@ -383,21 +411,49 @@
 
   function onPlayerReady() {
     playerStatus.textContent = 'ready — tap play';
+    hasRandomizedThisLoad = false;
+  }
+
+  // Jump to a random track in whatever playlist is currently loaded
+  function playRandomTrack() {
+    if (!player || !player.getPlaylist) return;
+    const list = player.getPlaylist();
+    if (!list || !list.length) return;
+    const randomIndex = Math.floor(Math.random() * list.length);
+    player.playVideoAt(randomIndex);
+  }
+
+  function updateNowPlayingTitle() {
+    try {
+      const data = player.getVideoData();
+      if (data && data.title) {
+        audioTitle.textContent = data.title;
+      }
+    } catch (e) { /* video data not ready yet */ }
   }
 
   function onPlayerStateChange(e) {
     if (e.data === YT.PlayerState.PLAYING) {
       playPauseBtn.textContent = '⏸';
       playerStatus.textContent = 'playing';
+      audioIcon.classList.add('spin');
+      updateNowPlayingTitle();
     } else if (e.data === YT.PlayerState.PAUSED) {
       playPauseBtn.textContent = '▶';
       playerStatus.textContent = 'paused';
+      audioIcon.classList.remove('spin');
     } else if (e.data === YT.PlayerState.BUFFERING) {
       playerStatus.textContent = 'buffering…';
     } else if (e.data === YT.PlayerState.ENDED) {
-      playerStatus.textContent = 'track ended';
+      playerStatus.textContent = 'track ended — playing a new one…';
+      playRandomTrack(); // every finished song is followed by a fresh random one
     } else if (e.data === YT.PlayerState.CUED) {
       playerStatus.textContent = 'ready — tap play';
+      // Every time a playlist is (re)loaded, jump straight to a random track
+      if (!hasRandomizedThisLoad) {
+        hasRandomizedThisLoad = true;
+        playRandomTrack();
+      }
     }
   }
 
@@ -422,13 +478,20 @@
       currentMode = mode;
       const pl = PLAYLISTS[mode];
 
-      openYt.href = `https://www.youtube.com/playlist?list=${pl.id}`;
+      openYt.href = pl.openUrl;
       modeLabel.textContent = pl.label;
+      audioTitle.textContent = 'Audio Mode';
 
       if (apiReady && player && player.loadPlaylist) {
+        hasRandomizedThisLoad = false;
         // loadPlaylist auto-starts playback — this counts as a real user click,
-        // so autoplay-with-sound is allowed by the browser here
-        player.loadPlaylist({ list: pl.id, listType: 'playlist' });
+        // so autoplay-with-sound is allowed by the browser here.
+        // onPlayerStateChange (CUED) will then jump to a random track.
+        if (pl.type === 'playlist') {
+          player.loadPlaylist({ list: pl.id, listType: 'playlist' });
+        } else {
+          player.loadPlaylist(pl.ids, 0);
+        }
         playerStatus.textContent = 'loading playlist…';
       }
     });
@@ -450,6 +513,9 @@
   });
   nextBtn.addEventListener('click', () => {
     if (player && player.nextVideo) player.nextVideo();
+  });
+  shuffleBtn.addEventListener('click', () => {
+    playRandomTrack();
   });
 </script>
 </body>
